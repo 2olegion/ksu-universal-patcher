@@ -326,23 +326,25 @@ jobs:
                 fi
             fi
 
-            # 1️⃣ Defconfig erzeugen
+            # 1️⃣ Defconfig ERZEUGEN (einziger erlaubter Einstieg!)
             make ARCH=arm64 O=out gki_defconfig
             
-            # 2️⃣ Config anpassen
-            ./scripts/config --disable LOCALVERSION_AUTO --file out/.config
-            sed -i '/res="$res${scm:++}"/d' scripts/setlocalversion
-            echo 'CONFIG_KSU_KPROBES_HOOK=n' >> out/.config
+            # 2️⃣ KernelSU / SUSFS Configs
+            ./scripts/config --file out/.config \
+              --disable LOCALVERSION_AUTO \
+              --set-val KSU_KPROBES_HOOK n
             
-            # 3️⃣ LTO korrekt setzen
+            sed -i '/res="$res${scm:++}"/d' scripts/setlocalversion
+            
+            # 3️⃣ LTO sauber umstellen
             if [ "$(./scripts/config --state LTO_CLANG_FULL --file out/.config)" = "y" ]; then
                 ./scripts/config --disable LTO_CLANG_FULL --file out/.config
-                ./scripts/config --enable LTO_CLANG_THIN --file out/.config
+                ./scripts/config --enable  LTO_CLANG_THIN --file out/.config
             fi
             
-            # 4️⃣ Config finalisieren
+            # 4️⃣ Config FINALISIEREN
             make ARCH=arm64 O=out olddefconfig
-            
+                            
             ./scripts/config --disable LOCALVERSION_AUTO --file out/.config
             sed -i '/res="$res${scm:++}"/d' scripts/setlocalversion
             echo 'CONFIG_KSU_KPROBES_HOOK=n' >> out/.config
