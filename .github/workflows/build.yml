@@ -272,6 +272,23 @@ jobs:
             # Delete files that may conflict with kernel functionality
             rm -rf ./android/abi_gki_protected_exports*
 
+            # 1️⃣ Defconfig erzeugen
+            make ARCH=arm64 O=out gki_defconfig
+            
+            # 2️⃣ Config anpassen
+            ./scripts/config --disable LOCALVERSION_AUTO --file out/.config
+            sed -i '/res="$res${scm:++}"/d' scripts/setlocalversion
+            echo 'CONFIG_KSU_KPROBES_HOOK=n' >> out/.config
+            
+            # 3️⃣ LTO korrekt setzen
+            if [ "$(./scripts/config --state LTO_CLANG_FULL --file out/.config)" = "y" ]; then
+                ./scripts/config --disable LTO_CLANG_FULL --file out/.config
+                ./scripts/config --enable LTO_CLANG_THIN --file out/.config
+            fi
+            
+            # 4️⃣ Config finalisieren
+            make ARCH=arm64 O=out olddefconfig
+        
         - name: 'Generate the kernel .config file'
           working-directory: './kernel-src'
           run: |
